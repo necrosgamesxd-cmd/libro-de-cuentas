@@ -135,6 +135,8 @@ with st.sidebar:
                         token = st.secrets["github_token"]
                         remote = f"https://{token}@github.com/necrosgamesxd-cmd/libro-de-cuentas.git"
                         subprocess.run(["git", "remote", "set-url", "origin", remote], cwd=CARPETA.parent, check=True)
+                        subprocess.run(["git", "config", "user.email", "necrosgamesxd-cmd@users.noreply.github.com"], cwd=CARPETA.parent, check=True)
+                        subprocess.run(["git", "config", "user.name", "necrosgamesxd-cmd"], cwd=CARPETA.parent, check=True)
                         subprocess.run(["git", "add", "data/"], cwd=CARPETA.parent, check=True,
                                        capture_output=True, text=True)
                         subprocess.run(["git", "add", "app.py"], cwd=CARPETA.parent, check=True,
