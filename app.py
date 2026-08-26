@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from pathlib import Path
 from datetime import date, timedelta
-import io, uuid
+import io, uuid, subprocess
 
 # ═══════════════════════ CONFIGURACIÓN ═══════════════════════
 st.set_page_config(page_title="Libro de Cuentas", page_icon="📒", layout="wide")
@@ -126,6 +126,36 @@ with st.sidebar:
             nuevo_nombre = st.text_input("Nombre de la institución", value=leer_entidad())
             if nuevo_nombre != leer_entidad():
                 guardar_entidad(nuevo_nombre)
+
+        with st.expander("🔀 Push a GitHub", expanded=False):
+            st.caption("Subir los datos del libro al repositorio remoto.")
+            token = st.text_input("Token de GitHub (Personal Access Token)", type="password",
+                                  help="Generalo en GitHub → Settings → Developer settings → Tokens")
+            msg_commit = st.text_input("Mensaje del commit", value="Actualización libro de cuentas")
+            if st.button("⬆ Push a GitHub", type="primary", use_container_width=True):
+                if not token.strip():
+                    st.error("Ingresá un token de GitHub válido.")
+                else:
+                    with st.spinner("Subiendo cambios..."):
+                        try:
+                            remote = f"https://{token.strip()}@github.com/necrosgamesxd-cmd/libro-de-cuentas.git"
+                            subprocess.run(["git", "remote", "set-url", "origin", remote], cwd=CARPETA.parent, check=True)
+                            subprocess.run(["git", "add", "data/"], cwd=CARPETA.parent, check=True,
+                                           capture_output=True, text=True)
+                            subprocess.run(["git", "add", "app.py"], cwd=CARPETA.parent, check=True,
+                                           capture_output=True, text=True)
+                            r = subprocess.run(["git", "diff", "--cached", "--quiet"], cwd=CARPETA.parent,
+                                               capture_output=True)
+                            if r.returncode == 0:
+                                st.info("No hay cambios para subir.")
+                            else:
+                                subprocess.run(["git", "commit", "-m", msg_commit], cwd=CARPETA.parent,
+                                               check=True, capture_output=True, text=True)
+                                subprocess.run(["git", "push", "origin", "main"], cwd=CARPETA.parent,
+                                               check=True, capture_output=True, text=True)
+                                st.success("Cambios subidos a GitHub ✔")
+                        except subprocess.CalledProcessError as e:
+                            st.error(f"Error al subir: {e.stderr or e.stdout or e}")
 
         with st.expander("📤 Subir Excel de miembros", expanded=True):
             st.caption("Columnas reconocidas: **Nombre** y **Cuota** (en cualquier orden).")
